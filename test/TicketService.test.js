@@ -1,6 +1,11 @@
 import TicketService from '../src/pairtest/TicketService.js';
 import InvalidPurchaseException from '../src/pairtest/lib/InvalidPurchaseException.js';
 import TicketTypeRequest from '../src/pairtest/lib/TicketTypeRequest.js';
+import TicketPaymentService from '../src/thirdparty/paymentgateway/TicketPaymentService.js';
+import SeatReservationService from '../src/thirdparty/seatbooking/SeatReservationService.js';
+
+jest.mock('../src/thirdparty/paymentgateway/TicketPaymentService');
+jest.mock('../src/thirdparty/seatbooking/SeatReservationService');
 
 describe('TicketService.purchaseTickets', () => {
     let ticketService;
@@ -94,24 +99,66 @@ describe('TicketService.purchaseTickets', () => {
     });
 
     describe('Validate total cost of tickets', () => {
-        // It should calculate correct total cost for requested tickets
+        it('should calculate the correct total cost for requested tickets', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', 2);
+            const childTicketRequest = new TicketTypeRequest('CHILD', 3);
 
-        // It should not charge for the purchase of Infant tickets
+            ticketService.purchaseTickets(1, adultTicketRequest, childTicketRequest);
 
-        // It should price according to the ticket type - Adult: £25, Child: £15, Infant: £0
+            expect(TicketPaymentService.prototype.makePayment).toHaveBeenCalledWith(1, 95); // 2*25 + 3*15 = 95
+        });
+
+        it('should not charge for the purchase of Infant tickets', () => {
+            const infantTicketRequest = new TicketTypeRequest('INFANT', 2);
+            const adultTicketRequest = new TicketTypeRequest('ADULT', 2);
+
+            ticketService.purchaseTickets(1, infantTicketRequest, adultTicketRequest);
+
+            expect(TicketPaymentService.prototype.makePayment).toHaveBeenCalledWith(1, 50); // 2*0 + 2*25= 50
+        });
+
+        it('should price according to the ticket type - Adult: £25, Child: £15, Infant: £0', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', 1);
+            const childTicketRequest = new TicketTypeRequest('CHILD', 1);
+            const infantTicketRequest = new TicketTypeRequest('INFANT', 1);
+
+            ticketService.purchaseTickets(1, adultTicketRequest, childTicketRequest, infantTicketRequest);
+
+            expect(TicketPaymentService.prototype.makePayment).toHaveBeenCalledWith(1, 40); // 1*25 + 1*15 + 1*0 = 40
+        });
     });
 
     describe('Validate seat allocation', () => {
-        // It should allocate correct number of seats for requested tickets
+        it('should allocate the correct number of seats for requested tickets', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', 2);
+            const childTicketRequest = new TicketTypeRequest('CHILD', 3);
+            const infantTicketRequest = new TicketTypeRequest('INFANT', 1);
 
-        // It should not allocate seats for Infant tickets
+            ticketService.purchaseTickets(1, adultTicketRequest, childTicketRequest, infantTicketRequest);
+
+            expect(SeatReservationService.prototype.reserveSeat).toHaveBeenCalledWith(1, 5); // 2 Adults + 3 Children = 5 seats (Infants don't need seats)
+        });
+        it('should not allocate seats for Infant tickets', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', 2);
+            const infantTicketRequest = new TicketTypeRequest('INFANT', 2);
+
+            ticketService.purchaseTickets(1, adultTicketRequest, infantTicketRequest);
+
+            expect(SeatReservationService.prototype.reserveSeat).toHaveBeenCalledWith(1, 2); // 2 Adults = 2 seats (Infants don't need seats)
+        });
     });
     
     describe('Validate ticket purchase functionality', () => {
-        // It should allow purchasing of multiple tickets'
+        it('should allow purchasing of multiple tickets', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', 2);
+            const childTicketRequest = new TicketTypeRequest('CHILD', 1);
 
-        
-        // It should reject if no tickets are requested
+            expect(() => ticketService.purchaseTickets(1, adultTicketRequest, childTicketRequest)).not.toThrow();
+        });
+
+        it('should reject if no tickets are requested', () => {
+            expect(() => ticketService.purchaseTickets(1)).toThrow(InvalidPurchaseException);
+        });
     });  
   });
   

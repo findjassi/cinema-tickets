@@ -1,7 +1,15 @@
 import TicketTypeRequest from './lib/TicketTypeRequest.js';
 import InvalidPurchaseException from './lib/InvalidPurchaseException.js';
+import TicketPaymentService from '../thirdparty/paymentgateway/TicketPaymentService.js';
+import SeatReservationService from '../thirdparty/seatbooking/SeatReservationService.js';
 
 export default class TicketService {
+  #ticketPrices = {
+    ADULT: 25,
+    CHILD: 15,
+    INFANT: 0
+  };
+
   /**
    * Should only have private methods other than the one below.
    */
@@ -12,6 +20,17 @@ export default class TicketService {
     this.#validateTicketTypeRequests(ticketTypeRequests);
     this.#validateMaximunNumberOfTickets(ticketTypeRequests);
     this.#validateAdultChildInfantTickets(ticketTypeRequests);
+
+    // Calculate total price
+    const { totalCost, totalSeats } = this.#calculateTotalCostandSeats(ticketTypeRequests);
+
+    // Make payment
+    const paymentService = new TicketPaymentService();
+    paymentService.makePayment(accountId, totalCost);
+
+    // Reserve seats
+    const seatReservationService = new SeatReservationService();
+    seatReservationService.reserveSeat(accountId, totalSeats);
   }
 
   // Validate account ID
@@ -32,6 +51,7 @@ export default class TicketService {
     }
   }
 
+  // Validate maximum tickets purchase
   #validateMaximunNumberOfTickets(ticketTypeRequests) {
     const totalTickets = ticketTypeRequests.reduce((total, ticketTypeRequest) => {
       return total + ticketTypeRequest.getNoOfTickets();
@@ -42,6 +62,7 @@ export default class TicketService {
     }
   }
 
+  // Validate adult, child and infant tickets
   #validateAdultChildInfantTickets(ticketTypeRequests) {
     const numberOfAdultTickets = ticketTypeRequests.reduce((total, ticketTypeRequest) => {
       return total + (ticketTypeRequest.getTicketType() === 'ADULT' ? ticketTypeRequest.getNoOfTickets() : 0);
@@ -58,5 +79,24 @@ export default class TicketService {
     if (numberOfInfantTickets > 0 && numberOfInfantTickets > numberOfAdultTickets) {
       throw new InvalidPurchaseException('More infant tickets than adult tickets requested');
     } 
+  }
+
+  // Calculate total cost and seats
+  #calculateTotalCostandSeats(ticketTypeRequests) {
+    let totalCost = 0;
+    let totalSeats = 0;
+    
+    ticketTypeRequests.forEach((ticketTypeRequest) => {
+      const ticketType = ticketTypeRequest.getTicketType();
+      const noOfTickets = ticketTypeRequest.getNoOfTickets();
+
+      totalCost += this.#ticketPrices[ticketType] * noOfTickets;
+      
+      if (ticketType !== 'INFANT') {
+        totalSeats += noOfTickets;
+      }
+    });
+
+    return { totalCost, totalSeats }
   }
 }
