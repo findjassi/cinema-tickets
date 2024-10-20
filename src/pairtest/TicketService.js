@@ -2,14 +2,9 @@ import TicketTypeRequest from './lib/TicketTypeRequest.js';
 import InvalidPurchaseException from './lib/InvalidPurchaseException.js';
 import TicketPaymentService from '../thirdparty/paymentgateway/TicketPaymentService.js';
 import SeatReservationService from '../thirdparty/seatbooking/SeatReservationService.js';
+import { ERROR_MESSAGES, MAXIMUM_NUMBER_OF_TICKETS, TICKET_PRICES } from './Constants.js';
 
 export default class TicketService {
-  #ticketPrices = {
-    ADULT: 25,
-    CHILD: 15,
-    INFANT: 0
-  };
-
   /**
    * Should only have private methods other than the one below.
    */
@@ -36,7 +31,7 @@ export default class TicketService {
   // Validate account ID
   #validateAccountId(accountId) {
     if (typeof accountId !== 'number' || accountId < 0) {
-      throw new InvalidPurchaseException('Invalid account ID');
+      throw new InvalidPurchaseException(ERROR_MESSAGES.INVALID_ACCOUNT_ID);
     }
   }
 
@@ -47,7 +42,7 @@ export default class TicketService {
     });
 
     if (invalidTicketTypeRequest || ticketTypeRequests.length === 0) {
-      throw new InvalidPurchaseException('Invalid ticket type request');
+      throw new InvalidPurchaseException(ERROR_MESSAGES.INVALID_TICKET_TYPE_REQUEST);
     }
   }
 
@@ -57,8 +52,8 @@ export default class TicketService {
       return total + ticketTypeRequest.getNoOfTickets();
     }, 0);
 
-    if (totalTickets > 25) {
-      throw new InvalidPurchaseException('Maximum number of tickets exceeded');
+    if (totalTickets > MAXIMUM_NUMBER_OF_TICKETS) {
+      throw new InvalidPurchaseException(ERROR_MESSAGES.MAXIMUM_NUMBER_OF_TICKETS_EXCEEDED);
     }
   }
 
@@ -69,7 +64,7 @@ export default class TicketService {
     }, 0);
     
     if(numberOfAdultTickets === 0) {
-      throw new InvalidPurchaseException('No adult tickets requested');
+      throw new InvalidPurchaseException(ERROR_MESSAGES.NO_ADULT_TICKETS_REQUESTED);
     }
 
     const numberOfInfantTickets = ticketTypeRequests.reduce((total, ticketTypeRequest) => {
@@ -77,7 +72,7 @@ export default class TicketService {
     }, 0);
     
     if (numberOfInfantTickets > 0 && numberOfInfantTickets > numberOfAdultTickets) {
-      throw new InvalidPurchaseException('More infant tickets than adult tickets requested');
+      throw new InvalidPurchaseException(ERROR_MESSAGES.MORE_INFANT_TICKETS_THAN_ADULT_TICKETS_REQUESTED);
     } 
   }
 
@@ -90,7 +85,7 @@ export default class TicketService {
       const ticketType = ticketTypeRequest.getTicketType();
       const noOfTickets = ticketTypeRequest.getNoOfTickets();
 
-      totalCost += this.#ticketPrices[ticketType] * noOfTickets;
+      totalCost += TICKET_PRICES[ticketType] * noOfTickets;
       
       if (ticketType !== 'INFANT') {
         totalSeats += noOfTickets;

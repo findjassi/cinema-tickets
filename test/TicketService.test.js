@@ -1,3 +1,4 @@
+import { MAXIMUM_NUMBER_OF_TICKETS } from '../src/pairtest/Constants.js';
 import TicketService from '../src/pairtest/TicketService.js';
 import InvalidPurchaseException from '../src/pairtest/lib/InvalidPurchaseException.js';
 import TicketTypeRequest from '../src/pairtest/lib/TicketTypeRequest.js';
@@ -46,13 +47,13 @@ describe('TicketService.purchaseTickets', () => {
     });
 
     describe('Validate maximum tickets purchase', () => {
-        it('should throw error if more than 25 tickets are requested', () => {
-            const adultTicketRequest = new TicketTypeRequest('ADULT', 26);
+        it('should throw error if more than MAXIMUM_NUMBER_OF_TICKETS tickets are requested', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', MAXIMUM_NUMBER_OF_TICKETS + 1);
             expect(() => ticketService.purchaseTickets(1, adultTicketRequest)).toThrow(InvalidPurchaseException);
         });
 
-        it('should not throw error if 25 or less tickets are requested', () => {
-            const adultTicketRequest = new TicketTypeRequest('ADULT', 25);
+        it('should not throw error if MAXIMUM_NUMBER_OF_TICKETS or less tickets are requested', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', MAXIMUM_NUMBER_OF_TICKETS);
             expect(() => ticketService.purchaseTickets(1, adultTicketRequest)).not.toThrow();
         });
     });
