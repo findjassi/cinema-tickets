@@ -1,16 +1,43 @@
+import TicketService from '../src/pairtest/TicketService.js';
+import InvalidPurchaseException from '../src/pairtest/lib/InvalidPurchaseException.js';
+import TicketTypeRequest from '../src/pairtest/lib/TicketTypeRequest.js';
+
 describe('TicketService.purchaseTickets', () => {
+    let ticketService;
+
+    beforeEach(() => {
+        ticketService = new TicketService();
+    });
+
     describe('Validate account ID', () => {
-        // It should throw error if account ID is a negative number
+        const validTicketRequest = new TicketTypeRequest('ADULT', 1);
 
-        // It should throw error if account ID is a string
+        it('should throw error if account ID is a negative number', () => {
+            expect(() => ticketService.purchaseTickets(-1, validTicketRequest)).toThrow(InvalidPurchaseException);
+        });
 
-        // It should not throw error if account ID is a positive number
+        it('should throw error if account ID is a string', () => {
+            expect(() => ticketService.purchaseTickets('123', validTicketRequest)).toThrow(InvalidPurchaseException);
+        });
+
+        it('should not throw error if account ID is a positive number', () => {
+            expect(() => ticketService.purchaseTickets(1, validTicketRequest)).not.toThrow();
+        });
     });
   
     describe('Validate types of tickets', () => {
-        // It should throw error if invalid ticket type is requested
+        it('should throw error if invalid ticket type is requested', () => {
+            expect(() => new TicketTypeRequest('INVALID_TYPE', 1)).toThrow(TypeError);
+        });
 
-        // It should not throw error if valid ticket type is requested
+        it('should not throw error if valid ticket type is requested', () => {
+            const validTicketRequest = new TicketTypeRequest('ADULT', 1);
+            expect(() => ticketService.purchaseTickets(1, validTicketRequest)).not.toThrow();
+        });
+
+        it('should throw error if no tickets are requested', () => {
+            expect(() => ticketService.purchaseTickets(1)).toThrow(InvalidPurchaseException);
+        });
     });
 
     describe('Validate maximum tickets purchase', () => {
@@ -51,7 +78,7 @@ describe('TicketService.purchaseTickets', () => {
     
     describe('Validate ticket purchase functionality', () => {
         // It should allow purchasing of multiple tickets'
-        
+
         
         // It should reject if no tickets are requested
     });  
