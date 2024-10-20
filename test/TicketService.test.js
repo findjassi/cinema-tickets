@@ -41,25 +41,56 @@ describe('TicketService.purchaseTickets', () => {
     });
 
     describe('Validate maximum tickets purchase', () => {
-        // It should throw error if more than 25 tickets are requested
+        it('should throw error if more than 25 tickets are requested', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', 26);
+            expect(() => ticketService.purchaseTickets(1, adultTicketRequest)).toThrow(InvalidPurchaseException);
+        });
 
-        // It should not throw error if 25 or less tickets are requested
+        it('should not throw error if 25 or less tickets are requested', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', 25);
+            expect(() => ticketService.purchaseTickets(1, adultTicketRequest)).not.toThrow();
+        });
     });
 
     describe('Validate adult, child and infant ticket dependencies', () => {
-        // It should throw error if Infant tickets are requested without an Adult ticket
+        it('should throw error if Infant tickets are requested without an Adult ticket', () => {
+            const infantTicketRequest = new TicketTypeRequest('INFANT', 1);
+            expect(() => ticketService.purchaseTickets(1, infantTicketRequest)).toThrow(InvalidPurchaseException);
+        });
 
-        // It should throw error if Child tickets are requested without an Adult ticket
+        it('should throw error if Child tickets are requested without an Adult ticket', () => {
+            const childTicketRequest = new TicketTypeRequest('CHILD', 1);
+            expect(() => ticketService.purchaseTickets(1, childTicketRequest)).toThrow(InvalidPurchaseException);
+        });
 
-        // It should not throw error if Infant tickets are requested with an Adult ticket
-        
-        // It should not throw error if Child tickets are requested with an Adult ticket
+        it('should not throw error if Infant tickets are requested with an Adult ticket', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', 1);
+            const infantTicketRequest = new TicketTypeRequest('INFANT', 1);
+            expect(() => ticketService.purchaseTickets(1, adultTicketRequest, infantTicketRequest)).not.toThrow();
+        });
 
-        // It should throw error if Infant tickets are more than Adult tickets
+        it('should not throw error if Child tickets are requested with an Adult ticket', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', 1);
+            const childTicketRequest = new TicketTypeRequest('CHILD', 1);
+            expect(() => ticketService.purchaseTickets(1, adultTicketRequest, childTicketRequest)).not.toThrow();
+        });
 
-        // It should not throw error if Infant tickets are less than or equal to Adult tickets
+        it('should throw error if Infant tickets are more than Adult tickets', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', 1);
+            const infantTicketRequest = new TicketTypeRequest('INFANT', 2);
+            expect(() => ticketService.purchaseTickets(1, adultTicketRequest, infantTicketRequest)).toThrow(InvalidPurchaseException);
+        });
 
-        // It should not throw error if only Adult tickets are requested
+        it('should not throw error if Infant tickets are less than or equal to Adult tickets', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', 2);
+            const infantTicketRequest = new TicketTypeRequest('INFANT', 2);
+            expect(() => ticketService.purchaseTickets(1, adultTicketRequest, infantTicketRequest)).not.toThrow();
+        });
+
+        it('should not throw error if only Adult tickets are requested', () => {
+            const adultTicketRequest = new TicketTypeRequest('ADULT', 3);
+            expect(() => ticketService.purchaseTickets(1, adultTicketRequest)).not.toThrow();
+        });
     });
 
     describe('Validate total cost of tickets', () => {
